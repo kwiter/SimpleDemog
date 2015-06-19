@@ -202,3 +202,77 @@ title('DF')
 boxplot(c(probsMat[,match(mods,colnames(probsMat))][,10],probsMat[,match(mods,colnames(probsMat))][,11],probsMat[,match(mods,colnames(probsMat))][,12])~
           rep(c('1.S','2.IN','3.N'),each = 10000),notch=T)
 title('DF Gap')
+
+
+
+resp = read.csv(paste(path,'/SimpleLimits/response.csv',sep=''),header=T)
+rownames(resp) = resp[,1]
+resp = resp[,-1]
+
+
+allA.lo = t(cbind(t(resp[4,1:3]),t(resp[4,4:6]),t(resp[7,1:3]),t(resp[7,4:6])))
+allA = t(cbind(t(resp[5,1:3]),t(resp[5,4:6]),t(resp[8,1:3]),t(resp[8,4:6])))
+allA.hi = t(cbind(t(resp[6,1:3]),t(resp[6,4:6]),t(resp[9,1:3]),t(resp[9,4:6])))
+
+allR.lo = t(cbind(t(resp[1,1:3]),t(resp[1,4:6]),t(resp[1,1:3]),t(resp[1,4:6])))
+allR = t(cbind(t(resp[2,1:3]),t(resp[2,4:6]),t(resp[2,1:3]),t(resp[2,4:6])))
+allR.hi = t(cbind(t(resp[3,1:3]),t(resp[3,4:6]),t(resp[3,1:3]),t(resp[3,4:6])))
+
+
+par(mfrow=c(2,1),mar=c(3, 4, 2, 2), oma=c(0,0,0,0),xpd=FALSE, xaxs="r", yaxs="i", mgp=c(2.1,.3,0), las=1, col.axis="#434343", col.main="#343434", tck=0, lend=1)
+kk=1
+for(k in c('allA','allR')){
+  
+  co = get(k); co.lo = get(paste(k,'.lo',sep='')); co.hi = get(paste(k,'.hi',sep=''))
+  numR = nrow(co)
+  numC = ncol(co)
+  num = (numR+1)*ncol(co) + 1
+  step = 1/num
+  ys = step
+  minX = min(c(co.lo,co.hi))
+  maxX = max(c(co.lo,co.hi))
+  minY = 0; maxY = 1
+  xTit = ''; yTit=''
+  
+  Title = c('Growth','Dieback','Germination','Mortaility')[kk]
+  kk=1+kk
+  plot(0, xlim=c(minX, maxX), ylim=c(minY, maxY), type="n", bty="n", las=1, 
+       main='', xlab=bquote(bold(.(xTit))), ylab=bquote(bold(.(yTit))), 
+       family="Helvetica", cex.main=1.5, cex.axis=0.8, cex.lab=0.8, xaxt="n", yaxt="n")
+  for(i in seq(0,ncol(co),by=2)){
+    rect(minX-10,i*numR*step,
+         maxX+10,i*numR*step +  numR*step,
+         col = rgb(.95,.95,.95), border=NA
+    )
+    
+  }
+  xs = rep(seq(step,numC*step,by = step),nrow(co)) + rep(seq(0,1-step*numC,step*numR),each=ncol(co))
+  title(bquote(bold(.(Title))),line=.9)
+  axis(4,at = xs,labels=rep(c('South','Within','North'),nrow(co)),tick=F,cex.axis=.55,hadj = .6)
+  axis(1,tick=F,cex = .9);#axis(3,tick=F,cex = .9)
+  axis(2,at = seq(numR*step,1,by = numR*step),
+       labels=c('HF','DF','HF|Gap','DF|Gap'),
+       tick=F,cex.axis=.9,hadj = 0,padj=1.1,adj = 0,line=-.5)
+  
+  abline(h = seq(0,1,numR*step),lty=3)
+  
+  abline(v=0,lty=2,col='grey')
+  pty1 = c(0,1,2,5)
+  pty2 = c(22,21,24,23)
+  for(j in 1:nrow(co)){
+    if(j %% 2 == 0){b.col = 'white'}else{b.col =  rgb(.95,.95,.95)}
+    for(i in 1:numC){
+      
+      lines(c(co.lo[j,i],co.hi[j,i]),c(ys,ys),col= b.col,lwd = 8)
+      lines(c(co.lo[j,i],co.hi[j,i]),c(ys,ys),col=c(3,2,1)[i],lwd = 1.5)
+      points(co[j,i],ys,col=c(3,2,1)[i],cex=.75,pch=pty2[i],bg=c(3,2,1)[i])
+      
+      ys = ys + step  
+    }
+    ys = ys + step  
+  }
+}
+
+Survival = list.files(paste(path,'/SimpleLimits',sep=''),full.names=T)
+load(Survival[grep("fittedSurv",Survival)])
+
